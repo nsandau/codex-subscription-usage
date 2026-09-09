@@ -28,20 +28,20 @@ describe("formatUsageIndicator", () => {
   };
 
   test("renders primary and secondary windows with available credits", () => {
-    expect(formatUsageIndicator(available)).toBe("usage: Codex 5h 72% · 7d 40% · 1 reset");
+    expect(formatUsageIndicator(available)).toBe("usage: Codex 5h 28% · 7d 60% · 1 reset");
   });
 
   test("formats the reset-credit count and omits it at zero", () => {
     expect(formatUsageIndicator({ ...available, availableResetCreditCount: 2 }))
-      .toBe("usage: Codex 5h 72% · 7d 40% · 2 resets");
+      .toBe("usage: Codex 5h 28% · 7d 60% · 2 resets");
     expect(formatUsageIndicator({ ...available, availableResetCreditCount: 0 }))
-      .toBe("usage: Codex 5h 72% · 7d 40%");
+      .toBe("usage: Codex 5h 28% · 7d 60%");
   });
 
   test("keeps loading, stale, and unavailable distinct", () => {
     expect(formatUsageIndicator({ state: "loading" })).toBe("usage: Codex loading");
     expect(formatUsageIndicator({ ...available, state: "stale" }))
-      .toBe("usage: Codex 5h 72% · 7d 40% · 1 reset · stale");
+      .toBe("usage: Codex 5h 28% · 7d 60% · 1 reset · stale");
     expect(formatUsageIndicator({ state: "unavailable" })).toBe("usage: Codex unavailable");
   });
 });

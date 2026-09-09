@@ -8,9 +8,10 @@ export function formatUsageIndicator(indicator: UsageIndicator): string {
   if (indicator.state === "loading") return "usage: Codex loading";
   if (indicator.state === "unavailable") return "usage: Codex unavailable";
 
-  const segments = indicator.windows.map(
-    (window) => `${formatUsageWindowDuration(window.durationSeconds)} ${formatPercent(window.usedPercent)}`,
-  );
+  const segments = indicator.windows.map((window) => {
+    const remainingPercent = 100 - window.usedPercent;
+    return `${formatUsageWindowDuration(window.durationSeconds)} ${formatPercent(remainingPercent)}`;
+  });
 
   if (indicator.availableResetCreditCount > 0) {
     const creditLabel = indicator.availableResetCreditCount === 1 ? "reset" : "resets";

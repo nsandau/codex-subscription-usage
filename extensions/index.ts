@@ -29,7 +29,7 @@ export default function codexSubscriptionUsage(pi: ExtensionAPI): void {
       ctx.ui.setStatus(STATUS_KEY, undefined);
       return;
     }
-    ctx.ui.setStatus(STATUS_KEY, formatUsageIndicator(usage.indicator()));
+    ctx.ui.setStatus(STATUS_KEY, formatIndicatorForTheme(usage.indicator(), ctx));
   };
 
   const refreshInBackground = (ctx: ExtensionContext, force = false): void => {
@@ -88,13 +88,26 @@ async function redeemSelectedCredit(ctx: ExtensionContext, provider: string | un
   }
 }
 
+function formatIndicatorForTheme(indicator: ReturnType<UsageCoordinator["indicator"]>, ctx: ExtensionContext): string {
+  if (indicator.state === "loading" || indicator.state === "unavailable") return formatUsageIndicator(indicator);
+  const colored = indicator.windows.map((window) => {
+    const remaining = 100 - window.usedPercent;
+    const text = `${Math.round(remaining)}%`;
+    if (remaining > 50) return ctx.ui.theme.fg("success", text);
+    if (remaining > 20) return ctx.ui.theme.fg("warning", text);
+    return ctx.ui.theme.fg("error", text);
+  });
+  let index = 0;
+  return formatUsageIndicator(indicator).replace(/\b\d+%/g, () => colored[index++] ?? "");
+}
+
 function renderSummary(indicator: ReturnType<UsageCoordinator["indicator"]>, cacheAge: number | undefined): string {
   if (indicator.state === "loading" || indicator.state === "unavailable") {
     return formatUsageIndicator(indicator);
   }
 
   const windows = indicator.windows
-    .map((window) => `${Math.round(window.usedPercent)}% used in ${formatDuration(window.durationSeconds)}`)
+    .map((window) => `${Math.round(100 - window.usedPercent)}% remaining in ${formatDuration(window.durationSeconds)}`)
     .join("; ");
   const cache = cacheAge === undefined ? "cache age unavailable" : `cache age ${formatDuration(Math.floor(cacheAge / 1_000))}`;
   const stale = indicator.state === "stale" ? "; stale" : "";
