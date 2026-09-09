@@ -1,0 +1,4 @@
+.pi/
+.scratch/
+node_modules/
+coverage/

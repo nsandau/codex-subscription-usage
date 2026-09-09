@@ -1,0 +1,22 @@
+{
+  "name": "codex-subscription-usage",
+  "version": "0.1.0",
+  "description": "Best-effort active Codex subscription usage for Pi.",
+  "license": "MIT",
+  "keywords": [
+    "pi-package",
+    "codex",
+    "subscription-usage"
+  ],
+  "pi": {
+    "extensions": [
+      "./extensions/index.ts"
+    ]
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*"
+  },
+  "scripts": {
+    "test": "bun test"
+  }
+}
