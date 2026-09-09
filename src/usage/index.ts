@@ -1,5 +1,5 @@
-export { resolveActiveCodexAuth } from "./auth";
-export type { ActiveCodexAuthResolver, StoredCodexCredential } from "./auth";
+export { resolveActiveCodexAuth, resolveRuntimeCodexAuth } from "./auth";
+export type { ActiveCodexAuthResolver, RuntimeModelRegistry, RuntimeProviderAuth, StoredCodexCredential } from "./auth";
 export { UsageCache } from "./cache";
 export { UsageCoordinator } from "./coordinator";
 export type { RefreshUsageOptions, UsageCoordinatorOptions } from "./coordinator";

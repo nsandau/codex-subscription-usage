@@ -7,6 +7,7 @@ import {
   fetchCodexUsage,
   normalizeCodexUsage,
   resolveActiveCodexAuth,
+  resolveRuntimeCodexAuth,
   type ActiveCodexAuth,
 } from "../src/usage";
 
@@ -56,6 +57,20 @@ describe("resolveActiveCodexAuth", () => {
     await expect(resolveActiveCodexAuth("openai", {
       getCredential: () => ({ type: "oauth", access: token, accountId }),
       getAccessToken: async () => token,
+    })).rejects.toThrow("Usage data is unavailable");
+  });
+});
+
+describe("resolveRuntimeCodexAuth", () => {
+  test("uses only native OAuth runtime auth", async () => {
+    const token = `header.${btoa(JSON.stringify({
+      "https://api.openai.com/auth": { chatgpt_account_id: "account-id" },
+    })).replace(/=/g, "")}.signature`;
+    await expect(resolveRuntimeCodexAuth("openai-codex-account-2", {
+      getProviderAuth: async () => ({ source: "OAuth", auth: { apiKey: token } }),
+    })).resolves.toMatchObject({ provider: "openai-codex-account-2", accountId: "account-id" });
+    await expect(resolveRuntimeCodexAuth("openai-codex", {
+      getProviderAuth: async () => ({ source: "API key", auth: { apiKey: token } }),
     })).rejects.toThrow("Usage data is unavailable");
   });
 });

@@ -8,9 +8,36 @@ export interface StoredCodexCredential {
   accountId: string;
 }
 
+export interface RuntimeProviderAuth {
+  source?: string;
+  auth?: { apiKey?: string; baseUrl?: string };
+}
+
+export interface RuntimeModelRegistry {
+  getProviderAuth(provider: string): Promise<RuntimeProviderAuth | undefined>;
+}
+
 export interface ActiveCodexAuthResolver {
   getCredential(provider: string): unknown;
   getAccessToken(provider: string): Promise<string | undefined>;
+}
+
+export async function resolveRuntimeCodexAuth(
+  provider: string,
+  registry: RuntimeModelRegistry,
+): Promise<ActiveCodexAuth> {
+  if (!isEligibleCodexProvider(provider)) throw new UsageError();
+  try {
+    const resolved = await registry.getProviderAuth(provider);
+    const accessToken = resolved?.auth?.apiKey;
+    if (!accessToken || !resolved?.source?.toLowerCase().includes("oauth")) throw new UsageError();
+    const accountId = getJwtAccountId(accessToken);
+    if (!accountId) throw new UsageError();
+    return { provider, accessToken, accountId };
+  } catch (error) {
+    if (error instanceof UsageError) throw error;
+    throw new UsageError();
+  }
 }
 
 export async function resolveActiveCodexAuth(

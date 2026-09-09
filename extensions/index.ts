@@ -6,7 +6,7 @@ import {
   fetchCodexUsage,
   fetchResetCredits,
   redeemResetCredit,
-  resolveActiveCodexAuth,
+  resolveRuntimeCodexAuth,
   UsageCoordinator,
 } from "../src/usage";
 
@@ -16,12 +16,9 @@ export default function codexSubscriptionUsage(pi: ExtensionAPI): void {
   let activeProvider: string | undefined;
   const usage = new UsageCoordinator({
     getActiveProvider: () => activeProvider,
-    resolveAuth: (provider) => resolveActiveCodexAuth(provider, {
-      getCredential: (id) => contextForAuth?.modelRegistry.authStorage.get(id),
-      getAccessToken: (id) => contextForAuth
-        ? contextForAuth.modelRegistry.getApiKeyForProvider(id)
-        : Promise.resolve(undefined),
-    }),
+    resolveAuth: (provider) => contextForAuth
+      ? resolveRuntimeCodexAuth(provider, contextForAuth.modelRegistry)
+      : Promise.reject(new Error("Usage data is unavailable")),
     fetchUsage: (auth, signal) => fetchCodexUsage(auth, { signal }),
   });
   let contextForAuth: ExtensionContext | undefined;
@@ -75,10 +72,7 @@ async function redeemSelectedCredit(ctx: ExtensionContext, provider: string | un
     return;
   }
   try {
-    const auth = await resolveActiveCodexAuth(provider, {
-      getCredential: (id) => ctx.modelRegistry.authStorage.get(id),
-      getAccessToken: (id) => ctx.modelRegistry.getApiKeyForProvider(id),
-    });
+    const auth = await resolveRuntimeCodexAuth(provider, ctx.modelRegistry);
     const credits = await fetchResetCredits(auth);
     const choices = credits.map((credit) => creditLabel(credit, new Date()));
     const selectedLabel = await ctx.ui.select("Redeem a Codex reset credit", choices);
