@@ -14,11 +14,9 @@ export function normalizeCodexUsage(value: unknown): UsageSnapshot {
   const resetCredits = asRecord(record?.rate_limit_reset_credits);
   const availableResetCreditCount = resetCredits?.available_count;
 
-  if (!primary || !secondary || !isNonNegativeInteger(availableResetCreditCount)) {
-    throw new UsageError();
-  }
+  if (!primary || !isNonNegativeInteger(availableResetCreditCount)) throw new UsageError();
 
-  return { windows: [primary, secondary], availableResetCreditCount };
+  return { windows: secondary ? [primary, secondary] : [primary], availableResetCreditCount };
 }
 
 function normalizeWindow(value: unknown): UsageWindow | undefined {

@@ -36,6 +36,14 @@ describe("normalizeCodexUsage", () => {
     });
   });
 
+  test("accepts a provider response that has only a primary window", () => {
+    const { secondary_window: _secondaryWindow, ...rateLimit } = usageFixture.rate_limit;
+    expect(normalizeCodexUsage({ ...usageFixture, rate_limit: rateLimit })).toMatchObject({
+      windows: [{ durationSeconds: 18_000, usedPercent: 72 }],
+      availableResetCreditCount: 1,
+    });
+  });
+
   test("rejects malformed responses without quoting their contents", () => {
     expect(() => normalizeCodexUsage({ rate_limit: { primary_window: { used_percent: "secret" } } }))
       .toThrow("Usage data is unavailable");
