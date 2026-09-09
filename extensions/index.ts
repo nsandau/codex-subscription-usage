@@ -2,7 +2,10 @@ import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-a
 
 import { formatUsageIndicator, isEligibleCodexProvider } from "../src/domain";
 import {
+  creditLabel,
   fetchCodexUsage,
+  fetchResetCredits,
+  redeemResetCredit,
   resolveActiveCodexAuth,
   UsageCoordinator,
 } from "../src/usage";
@@ -54,12 +57,41 @@ export default function codexSubscriptionUsage(pi: ExtensionAPI): void {
     description: "Show Codex subscription usage; add refresh to bypass the cache",
     handler: async (args, ctx) => {
       contextForAuth = ctx;
+      if (args.trim() === "redeem") {
+        await redeemSelectedCredit(ctx, activeProvider);
+        return;
+      }
       const force = args.trim() === "refresh";
       const indicator = await usage.refresh({ force });
       updateStatus(ctx);
       ctx.ui.notify(renderSummary(indicator, usage.cacheAge()), "info");
     },
   });
+}
+
+async function redeemSelectedCredit(ctx: ExtensionContext, provider: string | undefined): Promise<void> {
+  if (!ctx.hasUI || !provider || !isEligibleCodexProvider(provider)) {
+    ctx.ui.notify("Codex reset-credit redemption is unavailable.", "warning");
+    return;
+  }
+  try {
+    const auth = await resolveActiveCodexAuth(provider, {
+      getCredential: (id) => ctx.modelRegistry.authStorage.get(id),
+      getAccessToken: (id) => ctx.modelRegistry.getApiKeyForProvider(id),
+    });
+    const credits = await fetchResetCredits(auth);
+    const choices = credits.map((credit) => creditLabel(credit, new Date()));
+    const selectedLabel = await ctx.ui.select("Redeem a Codex reset credit", choices);
+    const credit = credits[choices.indexOf(selectedLabel ?? "")];
+    if (!credit || ctx.model?.provider !== provider) return;
+    const confirmed = await ctx.ui.confirm("Redeem reset credit?", `${creditLabel(credit, new Date())}\nConsumes one earned reset credit for this account and may reset its current limits.`);
+    if (!confirmed || ctx.model?.provider !== provider) return;
+    const key = crypto.randomUUID();
+    const result = await redeemResetCredit(auth, credit.id, key);
+    ctx.ui.notify(`Redemption result: ${result.code.replaceAll("_", " ")}.`, "info");
+  } catch {
+    ctx.ui.notify("Reset-credit redemption could not be completed.", "warning");
+  }
 }
 
 function renderSummary(indicator: ReturnType<UsageCoordinator["indicator"]>, cacheAge: number | undefined): string {

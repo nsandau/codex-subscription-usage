@@ -5,6 +5,8 @@ export { UsageCoordinator } from "./coordinator";
 export type { RefreshUsageOptions, UsageCoordinatorOptions } from "./coordinator";
 export type { ReadUsageOptions, UsageCacheOptions } from "./cache";
 export { UsageError } from "./error";
+export { creditLabel, fetchResetCredits, redeemResetCredit } from "./credits";
+export type { CreditFetchOptions, RedemptionResult } from "./credits";
 export { normalizeCodexUsage } from "./normalizer";
 export type { UsageSnapshot } from "./normalizer";
 export { CODEX_USAGE_URL, fetchCodexUsage } from "./transport";
