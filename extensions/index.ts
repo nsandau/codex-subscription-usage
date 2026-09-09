@@ -1,5 +1,82 @@
-import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 
-export default function codexSubscriptionUsage(_pi: ExtensionAPI): void {
-  // Lifecycle and command registration are added in later tickets.
+import { formatUsageIndicator, isEligibleCodexProvider } from "../src/domain";
+import {
+  fetchCodexUsage,
+  resolveActiveCodexAuth,
+  UsageCoordinator,
+} from "../src/usage";
+
+const STATUS_KEY = "codex-subscription-usage";
+
+export default function codexSubscriptionUsage(pi: ExtensionAPI): void {
+  let activeProvider: string | undefined;
+  const usage = new UsageCoordinator({
+    getActiveProvider: () => activeProvider,
+    resolveAuth: (provider) => resolveActiveCodexAuth(provider, {
+      getCredential: (id) => contextForAuth?.modelRegistry.authStorage.get(id),
+      getAccessToken: (id) => contextForAuth
+        ? contextForAuth.modelRegistry.getApiKeyForProvider(id)
+        : Promise.resolve(undefined),
+    }),
+    fetchUsage: (auth, signal) => fetchCodexUsage(auth, { signal }),
+  });
+  let contextForAuth: ExtensionContext | undefined;
+
+  const updateStatus = (ctx: ExtensionContext): void => {
+    contextForAuth = ctx;
+    if (!isEligibleCodexProvider(activeProvider ?? "")) {
+      ctx.ui.setStatus(STATUS_KEY, undefined);
+      return;
+    }
+    ctx.ui.setStatus(STATUS_KEY, formatUsageIndicator(usage.indicator()));
+  };
+
+  const refreshInBackground = (ctx: ExtensionContext, force = false): void => {
+    void usage.refresh({ force }).then(() => updateStatus(ctx));
+  };
+
+  pi.on("session_start", (_event, ctx) => {
+    activeProvider = ctx.model?.provider;
+    usage.handleProviderChange();
+    updateStatus(ctx);
+    refreshInBackground(ctx);
+  });
+
+  pi.on("model_select", (event, ctx) => {
+    activeProvider = event.model.provider;
+    usage.handleProviderChange(true);
+    updateStatus(ctx);
+    refreshInBackground(ctx);
+  });
+
+  pi.registerCommand("subscription-usage", {
+    description: "Show Codex subscription usage; add refresh to bypass the cache",
+    handler: async (args, ctx) => {
+      contextForAuth = ctx;
+      const force = args.trim() === "refresh";
+      const indicator = await usage.refresh({ force });
+      updateStatus(ctx);
+      ctx.ui.notify(renderSummary(indicator, usage.cacheAge()), "info");
+    },
+  });
+}
+
+function renderSummary(indicator: ReturnType<UsageCoordinator["indicator"]>, cacheAge: number | undefined): string {
+  if (indicator.state === "loading" || indicator.state === "unavailable") {
+    return formatUsageIndicator(indicator);
+  }
+
+  const windows = indicator.windows
+    .map((window) => `${Math.round(window.usedPercent)}% used in ${formatDuration(window.durationSeconds)}`)
+    .join("; ");
+  const cache = cacheAge === undefined ? "cache age unavailable" : `cache age ${formatDuration(Math.floor(cacheAge / 1_000))}`;
+  const stale = indicator.state === "stale" ? "; stale" : "";
+  return `Codex usage: ${windows}; ${indicator.availableResetCreditCount} reset credits; ${cache}${stale}`;
+}
+
+function formatDuration(seconds: number): string {
+  if (seconds >= 86_400) return `${Math.round(seconds / 86_400)}d`;
+  if (seconds >= 3_600) return `${Math.round(seconds / 3_600)}h`;
+  return `${Math.max(1, Math.round(seconds / 60))}m`;
 }

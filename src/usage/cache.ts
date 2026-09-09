@@ -51,6 +51,14 @@ export class UsageCache {
     this.cached = { snapshot, fetchedAt };
   }
 
+  age(): number | undefined {
+    return this.cached ? Math.max(0, this.now() - this.cached.fetchedAt) : undefined;
+  }
+
+  stale(): AvailableUsageIndicator | undefined {
+    return this.cached ? toIndicator("stale", this.cached.snapshot) : undefined;
+  }
+
   clear(): void {
     this.generation += 1;
     this.cached = undefined;

@@ -1,6 +1,8 @@
 export { resolveActiveCodexAuth } from "./auth";
 export type { ActiveCodexAuthResolver, StoredCodexCredential } from "./auth";
 export { UsageCache } from "./cache";
+export { UsageCoordinator } from "./coordinator";
+export type { RefreshUsageOptions, UsageCoordinatorOptions } from "./coordinator";
 export type { ReadUsageOptions, UsageCacheOptions } from "./cache";
 export { UsageError } from "./error";
 export { normalizeCodexUsage } from "./normalizer";
