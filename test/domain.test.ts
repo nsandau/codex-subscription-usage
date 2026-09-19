@@ -22,26 +22,28 @@ describe("formatUsageIndicator", () => {
     state: "available",
     windows: [
       { durationSeconds: 5 * 60 * 60, usedPercent: 72 },
-      { durationSeconds: 7 * 24 * 60 * 60, usedPercent: 40 },
+      { durationSeconds: 7 * 24 * 60 * 60, usedPercent: 40, resetAt: new Date("2026-01-05T00:00:00.000Z") },
     ],
     availableResetCreditCount: 1,
   };
 
-  test("renders primary and secondary windows with available credits", () => {
-    expect(formatUsageIndicator(available)).toBe("usage: Codex 5h 28% · 7d 60% · 1 reset");
+  test("renders primary and secondary windows with reset times and credits", () => {
+    expect(formatUsageIndicator(available, new Date("2026-01-01T00:00:00.000Z")))
+      .toBe("usage: Codex 5h 28% · 7d 60% ↻ 4d · 1 reset");
   });
 
   test("formats the reset-credit count and omits it at zero", () => {
-    expect(formatUsageIndicator({ ...available, availableResetCreditCount: 2 }))
-      .toBe("usage: Codex 5h 28% · 7d 60% · 2 resets");
-    expect(formatUsageIndicator({ ...available, availableResetCreditCount: 0 }))
-      .toBe("usage: Codex 5h 28% · 7d 60%");
+    const now = new Date("2026-01-01T00:00:00.000Z");
+    expect(formatUsageIndicator({ ...available, availableResetCreditCount: 2 }, now))
+      .toBe("usage: Codex 5h 28% · 7d 60% ↻ 4d · 2 resets");
+    expect(formatUsageIndicator({ ...available, availableResetCreditCount: 0 }, now))
+      .toBe("usage: Codex 5h 28% · 7d 60% ↻ 4d");
   });
 
   test("keeps loading, stale, and unavailable distinct", () => {
     expect(formatUsageIndicator({ state: "loading" })).toBe("usage: Codex loading");
-    expect(formatUsageIndicator({ ...available, state: "stale" }))
-      .toBe("usage: Codex 5h 28% · 7d 60% · 1 reset · stale");
+    expect(formatUsageIndicator({ ...available, state: "stale" }, new Date("2026-01-01T00:00:00.000Z")))
+      .toBe("usage: Codex 5h 28% · 7d 60% ↻ 4d · 1 reset · stale");
     expect(formatUsageIndicator({ state: "unavailable" })).toBe("usage: Codex unavailable");
   });
 });
@@ -55,8 +57,8 @@ describe("formatCompactExpiry", () => {
     expect(formatCompactExpiry(new Date("2026-01-01T13:00:00.000Z"), now)).toBe("13h");
   });
 
-  test("distinguishes unavailable and expired credits", () => {
-    expect(formatCompactExpiry(undefined, now)).toBe("no expiry");
+  test("distinguishes unknown and expired credit expiries", () => {
+    expect(formatCompactExpiry(undefined, now)).toBe("expiry unknown");
     expect(formatCompactExpiry(new Date("2025-12-31T23:59:00.000Z"), now)).toBe("expired");
   });
 });

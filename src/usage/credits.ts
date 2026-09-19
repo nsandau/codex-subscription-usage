@@ -56,9 +56,16 @@ function parseCredit(value: unknown): ResetCredit[] {
   if (!value || typeof value !== "object") return [];
   const credit = value as Record<string, unknown>;
   if (typeof credit.id !== "string" || credit.status !== "available" || credit.reset_type !== "codex_rate_limits") return [];
-  const expiresAt = typeof credit.expires_at === "number" ? new Date(credit.expires_at * 1_000) : undefined;
-  if (expiresAt && Number.isNaN(expiresAt.getTime())) return [];
+  const expiresAt = parseExpiry(credit.expires_at);
+  if (credit.expires_at !== undefined && !expiresAt) return [];
   return [{ id: credit.id, status: "available", expiresAt, title: sanitizeTitle(credit.title) }];
+}
+
+function parseExpiry(value: unknown): Date | undefined {
+  const date = typeof value === "number"
+    ? new Date(value * 1_000)
+    : typeof value === "string" ? new Date(value) : undefined;
+  return date && !Number.isNaN(date.getTime()) ? date : undefined;
 }
 
 function sanitizeTitle(value: unknown): string | undefined {

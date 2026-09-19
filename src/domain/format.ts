@@ -4,13 +4,14 @@ const HOUR_SECONDS = 60 * 60;
 const DAY_SECONDS = 24 * HOUR_SECONDS;
 const WEEK_SECONDS = 7 * DAY_SECONDS;
 
-export function formatUsageIndicator(indicator: UsageIndicator): string {
+export function formatUsageIndicator(indicator: UsageIndicator, now = new Date()): string {
   if (indicator.state === "loading") return "usage: Codex loading";
   if (indicator.state === "unavailable") return "usage: Codex unavailable";
 
   const segments = indicator.windows.map((window) => {
     const remainingPercent = 100 - window.usedPercent;
-    return `${formatUsageWindowDuration(window.durationSeconds)} ${formatPercent(remainingPercent)}`;
+    const reset = window.resetAt ? ` ↻ ${formatCompactExpiry(window.resetAt, now)}` : "";
+    return `${formatUsageWindowDuration(window.durationSeconds)} ${formatPercent(remainingPercent)}${reset}`;
   });
 
   if (indicator.availableResetCreditCount > 0) {
@@ -24,7 +25,8 @@ export function formatUsageIndicator(indicator: UsageIndicator): string {
 }
 
 export function formatCompactExpiry(expiresAt: Date | undefined, now: Date): string {
-  if (!expiresAt) return "no expiry";
+  // The reset-credit API may omit `expires_at`; absence does not establish that a credit never expires.
+  if (!expiresAt) return "expiry unknown";
 
   const secondsRemaining = Math.floor((expiresAt.getTime() - now.getTime()) / 1_000);
   if (secondsRemaining <= 0) return "expired";
