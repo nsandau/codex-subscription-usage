@@ -18,6 +18,7 @@ const auth: ActiveCodexAuth = {
 };
 
 const usageFixture = {
+  plan_type: "plus",
   rate_limit: {
     primary_window: { used_percent: 72, limit_window_seconds: 18_000, reset_at: 1_800_000_000 },
     secondary_window: { used_percent: 40, limit_window_seconds: 604_800, reset_at: 1_800_100_000 },
@@ -28,6 +29,7 @@ const usageFixture = {
 describe("normalizeCodexUsage", () => {
   test("uses provider-reported window durations and reset-credit count", () => {
     expect(normalizeCodexUsage(usageFixture)).toEqual({
+      planType: "plus",
       windows: [
         { durationSeconds: 18_000, usedPercent: 72, resetAt: new Date(1_800_000_000_000) },
         { durationSeconds: 604_800, usedPercent: 40, resetAt: new Date(1_800_100_000_000) },

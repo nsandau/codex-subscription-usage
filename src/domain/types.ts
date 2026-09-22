@@ -13,6 +13,7 @@ export interface ResetCredit {
 
 export interface AvailableUsageIndicator {
   state: "available" | "stale";
+  planType?: string;
   windows: readonly UsageWindow[];
   availableResetCreditCount: number;
 }

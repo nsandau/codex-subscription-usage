@@ -29,22 +29,24 @@ describe("formatUsageIndicator", () => {
 
   test("renders primary and secondary windows with reset times and credits", () => {
     expect(formatUsageIndicator(available, new Date("2026-01-01T00:00:00.000Z")))
-      .toBe("usage: Codex 5h 28% · 7d 60% ↻ 4d · 1 reset");
+      .toBe("Codex 5h 28% · 7d 60% ↻ 4d · 1 reset");
+    expect(formatUsageIndicator({ ...available, planType: "prolite" }, new Date("2026-01-01T00:00:00.000Z")))
+      .toBe("Codex Prolite 5h 28% · 7d 60% ↻ 4d · 1 reset");
   });
 
   test("formats the reset-credit count and omits it at zero", () => {
     const now = new Date("2026-01-01T00:00:00.000Z");
     expect(formatUsageIndicator({ ...available, availableResetCreditCount: 2 }, now))
-      .toBe("usage: Codex 5h 28% · 7d 60% ↻ 4d · 2 resets");
+      .toBe("Codex 5h 28% · 7d 60% ↻ 4d · 2 resets");
     expect(formatUsageIndicator({ ...available, availableResetCreditCount: 0 }, now))
-      .toBe("usage: Codex 5h 28% · 7d 60% ↻ 4d");
+      .toBe("Codex 5h 28% · 7d 60% ↻ 4d");
   });
 
   test("keeps loading, stale, and unavailable distinct", () => {
-    expect(formatUsageIndicator({ state: "loading" })).toBe("usage: Codex loading");
+    expect(formatUsageIndicator({ state: "loading" })).toBe("Codex loading");
     expect(formatUsageIndicator({ ...available, state: "stale" }, new Date("2026-01-01T00:00:00.000Z")))
-      .toBe("usage: Codex 5h 28% · 7d 60% ↻ 4d · 1 reset · stale");
-    expect(formatUsageIndicator({ state: "unavailable" })).toBe("usage: Codex unavailable");
+      .toBe("Codex 5h 28% · 7d 60% ↻ 4d · 1 reset · stale");
+    expect(formatUsageIndicator({ state: "unavailable" })).toBe("Codex unavailable");
   });
 });
 

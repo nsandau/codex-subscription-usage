@@ -2,6 +2,7 @@ import type { UsageWindow } from "../domain";
 import { UsageError } from "./error";
 
 export interface UsageSnapshot {
+  planType?: string;
   windows: readonly UsageWindow[];
   availableResetCreditCount: number;
 }
@@ -9,6 +10,7 @@ export interface UsageSnapshot {
 export function normalizeCodexUsage(value: unknown): UsageSnapshot {
   const record = asRecord(value);
   const rateLimit = asRecord(record?.rate_limit);
+  const planType = normalizePlanType(record?.plan_type);
   const primary = normalizeWindow(rateLimit?.primary_window);
   const secondary = normalizeWindow(rateLimit?.secondary_window);
   const resetCredits = asRecord(record?.rate_limit_reset_credits);
@@ -16,7 +18,17 @@ export function normalizeCodexUsage(value: unknown): UsageSnapshot {
 
   if (!primary || !isNonNegativeInteger(availableResetCreditCount)) throw new UsageError();
 
-  return { windows: secondary ? [primary, secondary] : [primary], availableResetCreditCount };
+  return {
+    ...(planType ? { planType } : {}),
+    windows: secondary ? [primary, secondary] : [primary],
+    availableResetCreditCount,
+  };
+}
+
+function normalizePlanType(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const planType = value.trim();
+  return planType || undefined;
 }
 
 function normalizeWindow(value: unknown): UsageWindow | undefined {

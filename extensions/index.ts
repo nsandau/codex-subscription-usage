@@ -111,7 +111,12 @@ function renderSummary(indicator: ReturnType<UsageCoordinator["indicator"]>, cac
     .join("; ");
   const cache = cacheAge === undefined ? "cache age unavailable" : `cache age ${formatDuration(Math.floor(cacheAge / 1_000))}`;
   const stale = indicator.state === "stale" ? "; stale" : "";
-  return `Codex usage: ${windows}; ${indicator.availableResetCreditCount} reset credits; ${cache}${stale}`;
+  const plan = indicator.planType ? ` ${formatPlanType(indicator.planType)}` : "";
+  return `Codex${plan}: ${windows}; ${indicator.availableResetCreditCount} reset credits; ${cache}${stale}`;
+}
+
+function formatPlanType(planType: string): string {
+  return planType.replace(/[_-]+/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 function formatDuration(seconds: number): string {

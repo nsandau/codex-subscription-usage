@@ -5,8 +5,8 @@ const DAY_SECONDS = 24 * HOUR_SECONDS;
 const WEEK_SECONDS = 7 * DAY_SECONDS;
 
 export function formatUsageIndicator(indicator: UsageIndicator, now = new Date()): string {
-  if (indicator.state === "loading") return "usage: Codex loading";
-  if (indicator.state === "unavailable") return "usage: Codex unavailable";
+  if (indicator.state === "loading") return "Codex loading";
+  if (indicator.state === "unavailable") return "Codex unavailable";
 
   const segments = indicator.windows.map((window) => {
     const remainingPercent = 100 - window.usedPercent;
@@ -21,7 +21,12 @@ export function formatUsageIndicator(indicator: UsageIndicator, now = new Date()
 
   if (indicator.state === "stale") segments.push("stale");
 
-  return `usage: Codex ${segments.join(" · ")}`;
+  const plan = indicator.planType ? ` ${formatPlanType(indicator.planType)}` : "";
+  return `Codex${plan} ${segments.join(" · ")}`;
+}
+
+function formatPlanType(planType: string): string {
+  return planType.replace(/[_-]+/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 export function formatCompactExpiry(expiresAt: Date | undefined, now: Date): string {
